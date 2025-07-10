@@ -280,7 +280,7 @@
                     <span data-lang-key="cart_total"></span>
                     <span id="cart-total">BDT 0.00</span>
                 </div>
-                <button class="w-full bg-slate-900 text-white py-3 rounded-lg font-semibold hover:bg-slate-800 transition-colors" data-lang-key="cart_checkout"></button>
+                <button id="checkout-btn" class="w-full bg-slate-900 text-white py-3 rounded-lg font-semibold hover:bg-slate-800 transition-colors" data-lang-key="cart_checkout"></button>
             </div>
         </div>
     </div>
@@ -351,6 +351,7 @@
         const langSwitcher = document.getElementById('lang-switcher');
         const categoryButtonsContainer = document.getElementById('category-buttons');
         const productGrid = document.getElementById('product-grid');
+        const checkoutBtn = document.getElementById('checkout-btn');
 
         // --- FUNCTIONS ---
         
@@ -457,12 +458,45 @@
             const products = productGrid.querySelectorAll('.product-card');
 
             products.forEach(product => {
-                if (selectedCategory === 'all' || product.dataset.category === selectedeCategory) {
+                if (selectedCategory === 'all' || product.dataset.category === selectedCategory) {
                     product.style.display = 'block';
                 } else {
                     product.style.display = 'none';
                 }
             });
+        });
+        
+        // Checkout Button Logic
+        checkoutBtn.addEventListener('click', () => {
+            if (cart.length === 0) {
+                const alertMsg = document.createElement('div');
+                alertMsg.textContent = currentLang === 'bn' ? 'আপনার কার্ট খালি।' : 'Your cart is empty.';
+                alertMsg.className = 'fixed top-5 right-5 bg-red-500 text-white py-2 px-4 rounded-lg shadow-lg z-50';
+                document.body.appendChild(alertMsg);
+                setTimeout(() => {
+                    alertMsg.remove();
+                }, 3000);
+                return;
+            }
+
+            let message = currentLang === 'bn' ? 'আসসালামু আলাইকুম, আমি এই পণ্যগুলো অর্ডার করতে চাই:\n\n' : 'Hello, I would like to order the following items:\n\n';
+            let total = 0;
+
+            cart.forEach(item => {
+                const productNameKey = 'product_' + item.name.toLowerCase().replace(/ /g, '_').replace(/-/g, '_');
+                const translatedName = translations[currentLang][productNameKey] || item.name;
+                const quantityText = currentLang === 'bn' ? `পরিমাণ: ${item.quantity}` : `Quantity: ${item.quantity}`;
+                message += `- ${translatedName} (${quantityText})\n`;
+                total += item.price * item.quantity;
+            });
+
+            const totalText = currentLang === 'bn' ? 'মোট:' : 'Total:';
+            message += `\n${totalText} BDT ${total.toFixed(2)}`;
+
+            const whatsappNumber = '8801731643202';
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+
+            window.open(whatsappUrl, '_blank');
         });
 
         window.addEventListener('scroll', () => {
@@ -475,8 +509,6 @@
         });
         
         // --- INITIALIZATION ---
-        // The lucide script is in the <head> and runs before this script.
-        // So, the lucide object should be available here.
         lucide.createIcons();
         setLanguage(currentLang);
         updateCart();
